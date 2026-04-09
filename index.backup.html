@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Prism NVO — Investment Intelligence Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--nvo-navy:#001965;--nvo-blue:#0057A8;--nvo-bright:#00A3E0;--nvo-red:#C8102E;
+--up:#1D9E75;--down:#C8102E;--amber:#EF9F27;--live:#22c55e;
+--page-bg:#F5F7FA;--card-bg:#FFFFFF;--border:#E0E4EA;
+--text-primary:#1A1A2E;--text-secondary:#6B7280;--text-muted:#9CA3AF;
+}
+html{font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--page-bg);color:var(--text-primary);overflow-x:hidden}
+.card{background:var(--card-bg);border:.5px solid var(--border);border-radius:10px;padding:16px;transition:transform 150ms ease}
+.card:hover{transform:translateY(-2px)}
+.card-static{background:var(--card-bg);border:.5px solid var(--border);border-radius:10px;padding:16px}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);font-weight:500}
+.value{font-size:22px;font-weight:500;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.hero-value{font-size:38px;font-weight:500;font-variant-numeric:tabular-nums}
+.sub{font-size:11px;color:var(--text-muted)}
+.pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500;border:1px solid rgba(255,255,255,.3);white-space:nowrap}
+.pill-green{background:var(--up);color:#fff;border:none}
+.pill-red{background:var(--down);color:#fff;border:none}
+.pill-amber{background:var(--amber);color:#fff;border:none}
+.pill-blue{background:var(--nvo-blue);color:#fff;border:none}
+.pill-outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-2-left{display:grid;grid-template-columns:300px 1fr;gap:12px}
+.flex{display:flex;align-items:center}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+.gap-4{gap:4px}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}
+.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mb-8{margin-bottom:8px}
+.text-up{color:var(--up)}.text-down{color:var(--down)}.text-amber{color:var(--amber)}
+.tab-content{padding:20px 20px 40px;max-width:1200px;margin:0 auto;animation:fadeIn 200ms ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes countUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--live);animation:pulse 2s ease infinite;flex-shrink:0}
+.topbar{background:var(--nvo-navy);height:52px;display:flex;align-items:center;padding:0 20px;color:#fff;gap:10px;position:relative;flex-wrap:nowrap}
+.topbar::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--nvo-blue)}
+.topbar .divider{width:1px;height:24px;background:rgba(255,255,255,.2);flex-shrink:0}
+.banner{background:#F0F4FF;height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;color:var(--text-secondary);border-bottom:.5px solid var(--border)}
+.tab-bar{background:#fff;border-bottom:.5px solid var(--border);display:flex;padding:0 20px;gap:0}
+.tab-btn{padding:10px 16px;font-size:12px;font-weight:500;color:var(--text-secondary);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 150ms}
+.tab-btn.active{color:var(--nvo-blue);border-bottom-color:var(--nvo-blue)}
+.tab-btn:hover{color:var(--nvo-blue)}
+.status-bar{position:fixed;bottom:0;left:0;right:0;height:26px;background:var(--page-bg);border-top:.5px solid var(--border);display:flex;align-items:center;padding:0 24px;font-size:11px;color:var(--text-secondary);z-index:100}
+.bar-track{height:6px;background:#E5E7EB;border-radius:3px;flex:1;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width 600ms ease}
+.engine-card{border-left:3px solid;padding:16px;cursor:pointer;transition:all 200ms}
+.engine-card:hover{transform:translateY(-2px)}
+.scatter-dot{cursor:pointer;transition:all 150ms}
+.scatter-dot:hover{r:8;opacity:1}
+.toggle-container{display:flex;border:1px solid rgba(255,255,255,.4);border-radius:99px;overflow:hidden}
+.toggle-btn{padding:3px 12px;font-size:11px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,.7);border:none;transition:all 150ms}
+.toggle-btn.active{background:#fff;color:var(--nvo-navy)}
+.chat-fab{position:fixed;bottom:40px;right:20px;z-index:200;cursor:pointer}
+.chat-fab-btn{width:48px;height:48px;border-radius:50%;background:var(--nvo-navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform 150ms}
+.chat-fab-btn:hover{transform:scale(1.05)}
+.chat-panel{position:fixed;bottom:96px;right:20px;width:340px;height:480px;background:#fff;border-radius:12px;border:.5px solid var(--border);display:flex;flex-direction:column;z-index:200;box-shadow:0 4px 24px rgba(0,0,0,.1);animation:fadeIn 200ms ease}
+.chat-header{padding:12px 16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chat-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.chat-input-area{padding:12px 16px;border-top:.5px solid var(--border);display:flex;gap:8px}
+.chat-input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;outline:none;font-family:inherit}
+.chat-input:focus{border-color:var(--nvo-blue)}
+.chat-send{background:var(--nvo-navy);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer}
+.msg-user{align-self:flex-end;background:var(--nvo-navy);color:#fff;padding:8px 12px;border-radius:10px 10px 2px 10px;max-width:80%;font-size:12px}
+.msg-prism{align-self:flex-start;background:#F5F7FA;color:var(--text-primary);padding:8px 12px;border-radius:10px 10px 10px 2px;max-width:85%;font-size:12px;border:.5px solid var(--border)}
+.suggest-pill{padding:6px 12px;border:1px solid var(--border);border-radius:99px;font-size:11px;cursor:pointer;background:#fff;color:var(--text-primary);transition:all 150ms}
+.suggest-pill:hover{border-color:var(--nvo-blue);color:var(--nvo-blue)}
+.timeline-bar{position:relative;height:3px;background:var(--border);border-radius:2px;margin:24px 0 8px}
+.timeline-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;border:2px solid #fff}
+.timeline-label{position:absolute;top:14px;transform:translateX(-50%);font-size:10px;white-space:nowrap;color:var(--text-secondary)}
+.timeline-name{position:absolute;bottom:14px;transform:translateX(-50%);font-size:10px;white-space:nowrap;font-weight:500;color:var(--text-primary)}
+.rebuttal-card{border-left:3px solid;padding:12px;border-radius:0 8px 8px 0}
+.tone-point{cursor:pointer;transition:r 150ms}
+.tone-point:hover{r:6}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:6px 8px;font-weight:500;color:var(--text-secondary);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+td{padding:6px 8px;border-bottom:.5px solid var(--border)}
+tr.highlight{background:#F0F6FF}
+.range-bar{position:relative;height:32px;background:#F3F4F6;border-radius:4px;overflow:visible}
+.range-zone{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff}
+.range-pin{position:absolute;top:-6px;bottom:-6px;width:2px;z-index:2}
+.range-pin-label{position:absolute;top:-20px;transform:translateX(-50%);font-size:10px;font-weight:500;white-space:nowrap}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--up) 0%,var(--amber) 50%,var(--down) 100%);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--nvo-navy);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.nn-avatar{width:36px;height:36px;border-radius:8px;background:var(--nvo-blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0}
+.board-dot{width:14px;height:14px;border-radius:50%;display:inline-block;margin:3px}
+@media(max-width:768px){
+.grid-4{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:1fr}
+.grid-2,.grid-2-left{grid-template-columns:1fr}
+.topbar{overflow-x:auto;gap:8px;padding:0 12px}
+.tab-content{padding:12px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
+
+/* ===== CACHED FALLBACK DATA ===== */
+const FALLBACK={price:36.98,change:-0.42,changePct:-1.12,mktCap:164300000000,high52:81.44,low52:35.12,volume:14200000,avgVol:12800000,dkkUsd:6.62};
+
+const FX={2021:.159,2022:.1412,2023:.1483,2024:.1451,2025:.1515};
+
+const COMPS=[
+{t:'NVO',name:'Novo Nordisk',evEbitda:7.6,evRev:5.0,pe:10.4,fwdPe:9.5,fcfY:4.1,ebitdaM:48.4,perf1y:-44.4,divY:4.0,highlight:true},
+{t:'LLY',name:'Eli Lilly',evEbitda:27.2,evRev:15.3,pe:40.7,fwdPe:25.0,fcfY:0.9,ebitdaM:43.4,perf1y:4.1,divY:1.0},
+{t:'AZN',name:'AstraZeneca',evEbitda:15.1,evRev:9.6,pe:31.1,fwdPe:25,fcfY:2.2,ebitdaM:33.2,perf1y:39.7,divY:2.0},
+{t:'SNY',name:'Sanofi',evEbitda:6.1,evRev:2.4,pe:20.6,fwdPe:12,fcfY:7.2,ebitdaM:25.7,perf1y:-12.8,divY:5.0},
+{t:'RHHBY',name:'Roche',evEbitda:15,evRev:5.5,pe:19.9,fwdPe:17,fcfY:3.5,ebitdaM:33,perf1y:22.3,divY:3.0},
+{t:'AMGN',name:'Amgen',evEbitda:13.9,evRev:5.9,pe:24.4,fwdPe:11,fcfY:4.6,ebitdaM:38.8,perf1y:19.6,divY:3.0},
+{t:'ABBV',name:'AbbVie',evEbitda:25.4,evRev:7.5,pe:88.1,fwdPe:13.9,fcfY:4.4,ebitdaM:38,perf1y:7.0,divY:3.0},
+{t:'PFE',name:'Pfizer',evEbitda:13.7,evRev:3.1,pe:20.8,fwdPe:8.6,fcfY:6.4,ebitdaM:22.6,perf1y:16.0,divY:6.0},
+{t:'MRK',name:'Merck',evEbitda:10.9,evRev:4.5,pe:16.6,fwdPe:20,fcfY:4.8,ebitdaM:41.6,perf1y:41.9,divY:3.0},
+];
+const PEER_MEDIAN={evEbitda:13.9,evRev:5.7,pe:22.6,fwdPe:14.5,ebitdaM:35.6};
+
+const ANALYSTS=[
+{firm:'CCB',rating:'Outperform',pt:'$43.29',date:'Mar 20',color:'var(--up)'},
+{firm:'Bernstein',rating:'Underperform',pt:'DKK 175',date:'Mar 18',color:'var(--down)'},
+{firm:'Berenberg',rating:'Buy',pt:'$47',date:'Mar 12',color:'var(--up)'},
+{firm:'TD Cowen',rating:'Hold',pt:'$42',date:'Mar 10',color:'var(--amber)'},
+{firm:'Morgan Stanley',rating:'Equal-Weight',pt:'$40',date:'Mar 4',color:'var(--amber)'},
+];
+
+const CATALYSTS=[
+{name:'Wegovy HD Launch',date:'2026-04-15',color:'var(--up)',label:'Bullish'},
+{name:'Q1 2026 Earnings',date:'2026-05-07',color:'var(--amber)',label:'Mixed'},
+{name:'Medicare Coverage',date:'2026-07-01',color:'var(--nvo-blue)',label:'Major catalyst'},
+{name:'CagriSema FDA',date:'2026-11-01',color:'var(--down)',label:'Binary'},
+{name:'IRA Prices',date:'2027-01-01',color:'var(--text-muted)',label:'Headwind'},
+{name:'US Patent',date:'2031-12-05',color:'var(--text-primary)',label:'Watch'},
+];
+
+const PIPELINE=[
+{drug:'CagriSema',mech:'GLP-1 + amylin',phase:'Filed',pos:70,peak:17,margin:40,rnpv:47.6},
+{drug:'Oral Wegovy',mech:'GLP-1 RA (oral)',phase:'Approved',pos:100,peak:3,margin:40,rnpv:12.0},
+{drug:'Sema MASH',mech:'GLP-1 RA',phase:'Phase 3',pos:58,peak:5,margin:40,rnpv:11.6},
+{drug:'Amycretin',mech:'Oral GLP-1/amylin',phase:'Phase 2',pos:20,peak:8,margin:40,rnpv:6.4},
+{drug:'Insulin icodec',mech:'Weekly basal insulin',phase:'Approved',pos:100,peak:3,margin:35,rnpv:10.5},
+{drug:'Monlunabant',mech:'CB1 inverse agonist',phase:'Phase 2',pos:20,peak:3,margin:40,rnpv:2.4},
+{drug:'Other pipeline',mech:'Various',phase:'Various',pos:15,peak:5,margin:35,rnpv:5.0},
+];
+
+const NEWS_FALLBACK=[
+{title:'Wegovy pill launch called best launch pharma has seen',source:'Bloomberg',date:'Feb 3, 2026',sentiment:'bullish',summary:'170K patients in first month, 15x faster than injectable Wegovy launch.',tier:1,impact:5},
+{title:'NVO settles with Hims — Hims will sell branded Wegovy',source:'CNBC',date:'Mar 9, 2026',sentiment:'bullish',summary:'Converts largest DTC compounding channel to distribution partner.',tier:1,impact:5},
+{title:'FDA approves Wegovy HD (7.2mg) — 20.7% weight loss',source:'MarketBeat',date:'Mar 19, 2026',sentiment:'bullish',summary:'Higher dose closes efficacy gap with Zepbound.',tier:2,impact:5},
+{title:'2026 guidance: sales to fall 5-13% at CER',source:'Reuters',date:'Feb 3, 2026',sentiment:'bearish',summary:'First-ever revenue decline guidance driven by MFN pricing and LOE.',tier:1,impact:5},
+{title:'CagriSema fails to match Zepbound in REDEFINE-4',source:'CNBC',date:'Feb 24, 2026',sentiment:'bearish',summary:'CagriSema ~20% WL vs Zepbound ~23% head-to-head.',tier:1,impact:5},
+{title:'FDA warning letter on unreported adverse events including deaths',source:'WSJ',date:'Mar 5, 2026',sentiment:'bearish',summary:'Third FDA warning in 6 months — systemic AE reporting failures.',tier:1,impact:5},
+{title:'Bernstein initiates Outperform with $175 target',source:'GuruFocus',date:'Mar 18, 2026',sentiment:'bullish',summary:'Extreme outlier bull call — 368% implied upside.',tier:2,impact:4},
+{title:'Wegovy subscription program launched at $249/mo',source:'PharmExec',date:'Mar 31, 2026',sentiment:'bullish',summary:'Direct pricing attack on compounding market via Ro, WeightWatchers, LifeMD.',tier:2,impact:4},
+];
+
+const REBUTTALS=[
+{bear:'CagriSema disappointed vs Zepbound',bull:'Already priced in at $148. CagriSema is filed with FDA — 20% weight loss in T2D. Oral Wegovy launched separately with 170K patients month 1. The obesity franchise has three shots on goal, not one.'},
+{bear:'Lilly dominates the obesity market',bull:"GLP-1 market grows $55B to $268B by 2030. At 20% share of $268B, NVO captures $54B vs $47B total revenue today. A Lilly win does not equal an NVO loss — the market expands."},
+{bear:'IRA 71% Medicare price cut Jan 2027',bull:'Medicare volume is ~15% of US revenue. 71% cut on that portion = ~6% total revenue impact. Offset: Medicare Part D obesity coverage from mid-2026 adds 40M+ new eligible patients.'},
+{bear:'Patent cliff — generics coming 2032',bull:'US compound patent protected until Dec 2031. Manufacturing a GLP-1 peptide at scale requires $2-4B and 3-5 years of regulatory validation. Realistic US generic entry: 2033-2035.'},
+];
+
+const THESIS_EXPERT=`Long NVO. Base target $55, bull $65, 18-month horizon.\n\nNovo Nordisk trades at 7.6x EV/EBITDA — a 45% discount to the 13.9x large-cap pharma median — pricing in permanent decline for a company that generated $46.8B in revenue, 48.4% EBITDA margins, and 33% net margins in FY2025. The market is wrong.\n\nThree engines power the recovery. First, the Diabetes moat: $31.4B in revenue anchored by Ozempic, with 26.5% US patient penetration leaving massive runway. Second, the Obesity franchise: Wegovy at $12.0B and accelerating — oral Wegovy's launch drew 170,000 patients in its first month, the strongest pharma debut on record. Third, the Rare Disease compounder: $3.0B in revenue with Alhemo just approved, mim8 filed for approval, and a normalized segment value of $16B that consensus ignores.\n\nThe single most important unmodeled catalyst is the compounding crackdown. One million patients on illegal compounded semaglutide represent $3-4B in diverted annual revenue. With 130+ lawsuits filed, FDA enforcement active since May 2025, and Hims converted from competitor to distribution partner, base case recovery adds $3.0B — roughly $5-7 per share not in the price.\n\nThe pipeline compounds the asymmetry. CagriSema ($17B peak revenue, filed with FDA), amycretin ($20.9B NPV per Evaluate), and five semaglutide label expansions carry an aggregate rNPV of $21.49 per share — currently priced at zero.\n\nThe competitive framing is wrong. The GLP-1 market is expanding from $55B to $268B by 2030. A Lilly win does not equal an NVO loss — both grow in a market expanding 30% annually.\n\nBear case floor: $28-32, requiring simultaneous failure of compounding enforcement, CagriSema rejection, and accelerated pricing collapse.`;
+
+const THESIS_LAYMAN=`Novo Nordisk makes the world's most prescribed diabetes and weight-loss drugs but its stock dropped 75% on fears that competitors and cheap knockoffs would steal its business. Those knockoffs are being shut down by courts and regulators, the company just launched a groundbreaking weight-loss pill, and the stock looks deeply underpriced relative to what the business actually earns.`;
+
+const PRISM_SYSTEM=`You are Prism, an AI investment analyst with deep expertise in Novo Nordisk (NVO). You have a confident, precise personality with slight dry wit. You always state a view, back it with specific data, and end with a verdict. You sign responses "— Prism". Never hedge excessively. Never say "I think" or "perhaps". Always be direct and data-anchored.\n\nRESEARCH DATA:\nRECOMMENDATION: Long NVO. Base $55, bull $65, 18-month.\nPRICE: $36.98. P/E 10.4x. EV/EBITDA 7.6x vs 13.9x peer median (-45%).\nTHREE ENGINES: Diabetes $35.4B / Obesity $12.8B / Rare Disease $3.0B.\nFINANCIALS: FY2025 rev $46.8B, EBITDA margin 48.4%, net margin 33.1%, ROIC 33%.\nCOMPOUNDING: 1M patients on illegal compounded sema = $3-4B diverted. 130+ lawsuits. FDA active May 2025. Hims converted Mar 2026. Base recovery +$3B.\nPIPELINE: rNPV $21.49/share at zero. CagriSema $17B peak. Amycretin $20.9B NPV. Oral Wegovy 170K patients month 1.\nWALL STREET: Hold (17/23) but $54 avg target = +46% upside. Contradiction.\nRARE DISEASE: $3B, 18x SOTP = $16B ($3.61/share). Alhemo approved, Mim8 filed.\nBEAR CASE: $28-32 needs simultaneous failures.\nKEY: Lilly win != NVO loss. GLP-1 $55B->$268B by 2030.\nIRA: 71% Medicare cut Jan 2027. ~6% total rev. Offset: 40M+ new patients mid-2026.\nPATENTS: US Dec 2031. Mfg moat $2-4B + 3-5yr. Realistic generics 2033-35.\nTECH: RSI 39.8. MACD rising. Short -22% from Jan. -75% ATH.\nGOV: CEO Doustdar grant ~$37 aligned. Foundation 28.1%/77.3% votes. 30yr div streak. Yield 4.0%.\nNVO vs LLY: Same rev ($46.8B vs $45.1B). Better margins. 5.4x lower mkt cap.`;
+
+/* ===== UTILITY FUNCTIONS ===== */
+const fmt=(n,d=0)=>n==null?'--':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtB=n=>n==null?'--':n>=1e12?`$${(n/1e12).toFixed(2)}T`:n>=1e9?`$${(n/1e9).toFixed(1)}B`:`$${(n/1e6).toFixed(0)}M`;
+const fmtM=n=>`$${(n/1e6).toFixed(0)}M`;
+const pct=(n,d=1)=>n==null?'--':`${n>=0?'+':''}${n.toFixed(d)}%`;
+const daysUntil=d=>{const ms=new Date(d)-new Date();const days=Math.ceil(ms/864e5);return days<0?'Past':days<90?`${days} days`:`~${Math.round(days/30)} months`};
+
+/* ===== COUNT-UP HOOK ===== */
+function useCountUp(target,duration=800,decimals=0){
+  const[val,setVal]=useState(0);
+  const ref=useRef(null);
+  useEffect(()=>{
+    if(target==null)return;
+    const start=performance.now();
+    const animate=now=>{
+      const elapsed=now-start;
+      const progress=Math.min(elapsed/duration,1);
+      const eased=1-Math.pow(1-progress,3);
+      setVal(eased*target);
+      if(progress<1)ref.current=requestAnimationFrame(animate);
+    };
+    ref.current=requestAnimationFrame(animate);
+    return()=>cancelAnimationFrame(ref.current);
+  },[target,duration]);
+  return decimals>0?val.toFixed(decimals):Math.round(val);
+}
+
+/* ===== LIVE DATA HOOK ===== */
+function useLiveData(){
+  const[data,setData]=useState({...FALLBACK,delayed:true,lastUpdate:Date.now()});
+  const fetchData=useCallback(async()=>{
+    try{
+      const res=await fetch('https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/NVO?interval=1d&range=1mo'));
+      const json=await res.json();
+      const meta=json.chart.result[0].meta;
+      const ts=json.chart.result[0].timestamp;
+      const closes=json.chart.result[0].indicators.quote[0].close;
+      const vols=json.chart.result[0].indicators.quote[0].volume;
+      const avgVol=vols.filter(Boolean).reduce((a,b)=>a+b,0)/vols.filter(Boolean).length;
+      setData({
+        price:meta.regularMarketPrice,
+        change:meta.regularMarketPrice-meta.chartPreviousClose,
+        changePct:((meta.regularMarketPrice-meta.chartPreviousClose)/meta.chartPreviousClose)*100,
+        mktCap:meta.marketCap||FALLBACK.mktCap,
+        high52:meta.fiftyTwoWeekHigh||FALLBACK.high52,
+        low52:meta.fiftyTwoWeekLow||FALLBACK.low52,
+        volume:meta.regularMarketVolume||FALLBACK.volume,
+        avgVol:Math.round(avgVol),
+        delayed:false,
+        lastUpdate:Date.now(),
+        prices:closes.filter(Boolean),
+        timestamps:ts,
+      });
+    }catch(e){setData(d=>({...d,delayed:true}))}
+  },[]);
+  useEffect(()=>{fetchData();const id=setInterval(fetchData,60000);return()=>clearInterval(id)},[fetchData]);
+  return data;
+}
+
+/* ===== FX HOOK ===== */
+function useFx(){
+  const[rate,setRate]=useState(FALLBACK.dkkUsd);
+  useEffect(()=>{
+    fetch('https://corsproxy.io/?'+encodeURIComponent('https://api.exchangerate-api.com/v4/latest/USD'))
+      .then(r=>r.json()).then(d=>setRate(d.rates?.DKK||FALLBACK.dkkUsd)).catch(()=>{});
+  },[]);
+  return rate;
+}
+
+/* ===== PRICE HISTORY HOOK ===== */
+function usePriceHistory(range){
+  const[hist,setHist]=useState(null);
+  useEffect(()=>{
+    const intervals={
+      '1D':'5m','1W':'15m','1M':'1d','1Y':'1d','3Y':'1wk','5Y':'1wk'
+    };
+    const ranges={
+      '1D':'1d','1W':'5d','1M':'1mo','1Y':'1y','3Y':'3y','5Y':'5y'
+    };
+    fetch('https://corsproxy.io/?'+encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/NVO?interval=${intervals[range]||'1d'}&range=${ranges[range]||'1mo'}`))
+      .then(r=>r.json()).then(d=>{
+        const r=d.chart.result[0];
+        const ts=r.timestamp||[];
+        const q=r.indicators.quote[0];
+        const prices=ts.map((t,i)=>({date:new Date(t*1000),close:q.close[i],high:q.high?.[i],low:q.low?.[i],open:q.open?.[i],vol:q.volume?.[i]})).filter(p=>p.close!=null);
+        setHist(prices);
+      }).catch(()=>setHist(null));
+  },[range]);
+  return hist;
+}
+
+/* ===== SVG LINE CHART ===== */
+function LineChart({data,width=600,height=130,color='#0057A8',showGradient=true,animate=true,overlays=[]}){
+  const svgRef=useRef(null);
+  const[hover,setHover]=useState(null);
+  if(!data||data.length<2)return React.createElement('div',{style:{height,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text-muted)',fontSize:12}},'Loading chart...');
+  const closes=data.map(d=>d.close);
+  const minY=Math.min(...closes)*0.98;
+  const maxY=Math.max(...closes)*1.02;
+  const rangeY=maxY-minY||1;
+  const px=i=>(i/(data.length-1))*width;
+  const py=v=>height-((v-minY)/rangeY)*height;
+  const pathD=closes.map((c,i)=>`${i===0?'M':'L'}${px(i).toFixed(1)},${py(c).toFixed(1)}`).join(' ');
+  const areaD=pathD+` L${width},${height} L0,${height} Z`;
+  const gradId='grad-'+Math.random().toString(36).substr(2,5);
+  const totalLen=data.length*2;
+
+  const yLabels=[minY,minY+rangeY/2,maxY].map(v=>({v,y:py(v)}));
+  const xStep=Math.floor(data.length/3);
+  const xLabels=[0,xStep,xStep*2,data.length-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>({i,x:px(i),label:data[i].date?.toLocaleDateString('en-US',{month:'short',day:'numeric'})||''}));
+
+  const handleMouse=e=>{
+    const rect=svgRef.current.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const idx=Math.round((x/rect.width)*data.length);
+    if(idx>=0&&idx<data.length)setHover({idx,x:px(idx),y:py(closes[idx]),price:closes[idx],date:data[idx].date,pctChange:((closes[idx]-closes[0])/closes[0]*100)});
+  };
+
+  return React.createElement('svg',{ref:svgRef,viewBox:`0 0 ${width} ${height}`,style:{width:'100%',height},onMouseMove:handleMouse,onMouseLeave:()=>setHover(null)},
+    showGradient&&React.createElement('defs',null,React.createElement('linearGradient',{id:gradId,x1:0,y1:0,x2:0,y2:1},React.createElement('stop',{offset:'0%',stopColor:color,stopOpacity:.12}),React.createElement('stop',{offset:'100%',stopColor:color,stopOpacity:0}))),
+    showGradient&&React.createElement('path',{d:areaD,fill:`url(#${gradId})`}),
+    React.createElement('path',{d:pathD,fill:'none',stroke:color,strokeWidth:1.5,strokeLinecap:'round',strokeLinejoin:'round',style:animate?{strokeDasharray:totalLen*10,strokeDashoffset:totalLen*10,animation:`drawLine 600ms ease forwards`}:{}}),
+    overlays.map((o,oi)=>{
+      if(!o.data||o.data.length<2)return null;
+      const oPath=o.data.map((v,i)=>`${i===0?'M':'L'}${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
+      return React.createElement('path',{key:oi,d:oPath,fill:'none',stroke:o.color,strokeWidth:1,strokeDasharray:o.dashed?'4,3':'none',opacity:.7});
+    }),
+    yLabels.map((l,i)=>React.createElement('text',{key:'y'+i,x:-2,y:l.y+3,fontSize:9,fill:'#9CA3AF',textAnchor:'end'},'$'+fmt(l.v,0))),
+    xLabels.map((l,i)=>React.createElement('text',{key:'x'+i,x:l.x,y:height+12,fontSize:9,fill:'#9CA3AF',textAnchor:'middle'},l.label)),
+    hover&&React.createElement('g',null,
+      React.createElement('line',{x1:hover.x,y1:0,x2:hover.x,y2:height,stroke:'#9CA3AF',strokeWidth:.5,strokeDasharray:'3,2'}),
+      React.createElement('circle',{cx:hover.x,cy:hover.y,r:3,fill:color,stroke:'#fff',strokeWidth:1.5}),
+      React.createElement('rect',{x:Math.min(hover.x+8,width-90),y:Math.max(hover.y-30,0),width:82,height:28,rx:4,fill:'#fff',stroke:'var(--border)',strokeWidth:.5}),
+      React.createElement('text',{x:Math.min(hover.x+14,width-84),y:Math.max(hover.y-15,15),fontSize:10,fill:'var(--text-primary)',fontWeight:500},'$'+hover.price.toFixed(2)),
+      React.createElement('text',{x:Math.min(hover.x+14,width-84),y:Math.max(hover.y-4,26),fontSize:9,fill:hover.pctChange>=0?'var(--up)':'var(--down)'},pct(hover.pctChange)),
+    ),
+  );
+}
+
+/* ===== PRISM SVG LOGO ===== */
+function PrismLogo({size=20}){
+  return React.createElement('svg',{width:size,height:size,viewBox:'0 0 24 24',fill:'none'},
+    React.createElement('polygon',{points:'12,2 22,20 2,20',stroke:'#00A3E0',strokeWidth:1.5,fill:'none',strokeLinejoin:'round'}),
+    React.createElement('line',{x1:12,y1:2,x2:8,y2:20,stroke:'#00A3E0',strokeWidth:.5,strokeDasharray:'2,2',opacity:.6}),
+    React.createElement('line',{x1:12,y1:2,x2:16,y2:20,stroke:'#00A3E0',strokeWidth:.5,strokeDasharray:'2,2',opacity:.6}),
+  );
+}
+
+/* ===== TOPBAR ===== */
+function Topbar({price,changePct,delayed,dkkUsd,isLayman,setIsLayman}){
+  const isUp=changePct>=0;
+  return React.createElement('div',{className:'topbar'},
+    React.createElement(PrismLogo,{size:22}),
+    React.createElement('span',{style:{fontSize:15,fontWeight:500}},'Prism \u00b7 NVO'),
+    React.createElement('div',{className:'divider'}),
+    React.createElement('div',{className:'nn-avatar'},'NN'),
+    React.createElement('span',{style:{fontSize:13,fontWeight:500}},'Novo Nordisk'),
+    React.createElement('span',{className:'pill pill-outline'},'NYSE: NVO'),
+    React.createElement('span',{className:'pill pill-outline'},'DK'),
+    React.createElement('span',{style:{fontSize:11,opacity:.6}},'Founded 1923'),
+    React.createElement('div',{className:'divider'}),
+    React.createElement('span',{style:{fontSize:20,fontWeight:500}},'$'+(price||0).toFixed(2)),
+    React.createElement('span',{className:`pill ${isUp?'pill-green':'pill-red'}`,style:{fontSize:12}},pct(changePct)),
+    React.createElement('div',{className:'live-dot'}),
+    React.createElement('span',{style:{fontSize:11,opacity:.6}},delayed?'Delayed':'DKK/USD '+(dkkUsd||0).toFixed(2)),
+    React.createElement('div',{style:{flex:1,minWidth:8}}),
+    React.createElement('div',{className:'toggle-container'},
+      React.createElement('button',{className:`toggle-btn ${!isLayman?'active':''}`,onClick:()=>setIsLayman(false)},'Expert'),
+      React.createElement('button',{className:`toggle-btn ${isLayman?'active':''}`,onClick:()=>setIsLayman(true)},'Layman'),
+    ),
+  );
+}
+
+/* ===== MARKET HOURS ===== */
+function getMarketStatus(){
+  const now=new Date();
+  const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const day=et.getDay(),h=et.getHours(),m=et.getMinutes();
+  const mins=h*60+m;
+  if(day===0||day===6)return{open:false,msg:'Markets closed \u00b7 Opens Monday 9:30am ET'};
+  if(mins>=570&&mins<960)return{open:true,msg:null};
+  if(mins<570)return{open:false,msg:'Markets closed \u00b7 Opens today 9:30am ET'};
+  return{open:false,msg:'Markets closed \u00b7 Last close'};
+}
+
+/* ===== BANNER ===== */
+function Banner({price,dkkUsd,lastUpdate}){
+  const[ago,setAgo]=useState(0);
+  const[status,setStatus]=useState(getMarketStatus());
+  useEffect(()=>{const id=setInterval(()=>{setAgo(Math.round((Date.now()-lastUpdate)/1000));setStatus(getMarketStatus())},1000);return()=>clearInterval(id)},[lastUpdate]);
+  const dotColor=status.open?'var(--live)':'var(--amber)';
+  const leftText=status.open?`Markets open \u00b7 NVO $${(price||0).toFixed(2)} \u00b7 Updated ${ago}s ago`:status.msg+` \u00b7 NVO $${(price||0).toFixed(2)}`;
+  return React.createElement('div',{className:'banner'},
+    React.createElement('div',{className:'flex gap-8'},React.createElement('div',{style:{width:6,height:6,borderRadius:'50%',background:dotColor,animation:status.open?'pulse 2s ease infinite':'none',flexShrink:0}}),
+      React.createElement('span',null,leftText)),
+    React.createElement('span',null,`DKK/USD ${(dkkUsd||0).toFixed(2)} \u00b7 Fundamentals: FY2025 \u00b7 Next earnings: May 7, 2026`),
+  );
+}
+
+/* ===== METRIC CARD ===== */
+function MetricCard({label,value,sub,color}){
+  return React.createElement('div',{className:'card'},
+    React.createElement('div',{className:'label'},label),
+    React.createElement('div',{className:'value',style:color?{color}:{}},value),
+    React.createElement('div',{className:'sub'},sub),
+  );
+}
+
+/* ===== TAB 1: OVERVIEW ===== */
+function TabOverview({data,dkkUsd,isLayman}){
+  const price=data.price||FALLBACK.price;
+  const hist=usePriceHistory('1Y');
+  const[chartRange,setChartRange]=useState('1Y');
+  const chartData=usePriceHistory(chartRange);
+  const pctFromHigh=((price-81.44)/81.44*100);
+  const pctFromLow=((price-35.12)/35.12*100);
+  const[expandedEngine,setExpanded]=useState(null);
+
+  return React.createElement('div',{className:'tab-content'},
+    // Row 1: Four metric cards
+    React.createElement('div',{className:'grid-4'},
+      React.createElement(MetricCard,{label:'Market Cap',value:fmtB(data.mktCap||FALLBACK.mktCap),sub:'Diluted shares: 4.444B'}),
+      React.createElement(MetricCard,{label:'52-Week High',value:'$81.44',sub:`Current: ${pctFromHigh.toFixed(1)}% from high`,color:'var(--down)'}),
+      React.createElement(MetricCard,{label:'52-Week Low',value:'$35.12',sub:`Current: +${pctFromLow.toFixed(1)}% from low`,color:'var(--up)'}),
+      React.createElement(MetricCard,{label:'Volume',value:fmt(data.volume||FALLBACK.volume),sub:`vs 30-day avg ${fmt(data.avgVol||FALLBACK.avgVol)}`}),
+    ),
+    // Row 2: Historical Valuation Context
+    React.createElement('div',{className:'card-static mt-12',style:{borderLeft:'3px solid var(--nvo-red)'}},
+      React.createElement('div',{className:'label',style:{color:'var(--down)',fontWeight:600,marginBottom:8}},'NVO AT HISTORICAL EXTREMES — CONTRARIAN ENTRY SIGNAL'),
+      React.createElement('div',{className:'grid-4'},
+        ...[{l:'P/E',v:'10.4x',s:'vs 5Y avg ~30x — 1st percentile',down:true},{l:'EV/EBITDA',v:'7.6x',s:'vs 5Y avg ~22x — 1st percentile',down:true},{l:'Dividend Yield',v:'4.0%',s:'vs 5Y avg ~1.3% — 99th percentile',down:false},{l:'Below ATH',v:'-75%',s:'ATH: $148.15 Jun 2024',down:true}].map((m,i)=>
+          React.createElement('div',{key:i},
+            React.createElement('div',{className:'label'},m.l),
+            React.createElement('div',{style:{fontSize:22,fontWeight:500,color:m.down?'var(--down)':'var(--up)'}},m.v),
+            React.createElement('div',{className:'sub',style:{color:m.down?'var(--down)':'var(--up)'}},`${m.down?'\u25bc':'\u25b2'} ${m.s}`),
+          )),
+      ),
+    ),
+    // Row 3: Prism Score + Chart
+    React.createElement('div',{className:'grid-2-left mt-12'},
+      // Prism Score
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{className:'flex-between mb-8'},
+          React.createElement('div',{className:'label'},'Prism Score'),
+          React.createElement('span',{className:'pill pill-green',style:{fontSize:11}},'BUY'),
+        ),
+        React.createElement('div',{className:'hero-value',style:{marginBottom:12}},'6.8',React.createElement('span',{style:{fontSize:16,color:'var(--text-muted)'}},' / 10')),
+        ...([{name:'Fundamental',weight:'40%',pct:75,score:'7.5',color:'var(--nvo-blue)',tag:'Q4 2025',tagColor:'#E5E7EB'},{name:'Technical',weight:'20%',pct:40,score:'4.0',color:'var(--amber)',tag:'live',tagColor:'var(--live)'},{name:'Intelligence',weight:'25%',pct:45,score:'4.5',color:'var(--amber)',tag:'live',tagColor:'var(--live)'},{name:'Governance',weight:'15%',pct:65,score:'6.5',color:'var(--up)',tag:'2025',tagColor:'#E5E7EB'}]).map((s,i)=>
+          React.createElement('div',{key:i,style:{marginBottom:8}},
+            React.createElement('div',{className:'flex-between',style:{fontSize:11,marginBottom:3}},
+              React.createElement('span',{style:{color:'var(--text-secondary)'}},`${s.name} (${s.weight})`),
+              React.createElement('div',{className:'flex gap-4'},
+                React.createElement('span',{className:'pill',style:{fontSize:9,padding:'1px 6px',background:s.tagColor,color:s.tagColor==='var(--live)'?'#fff':'var(--text-secondary)',border:'none'}},s.tag),
+                React.createElement('span',{style:{fontWeight:500}},s.score),
+              ),
+            ),
+            React.createElement('div',{className:'bar-track'},React.createElement('div',{className:'bar-fill',style:{width:s.pct+'%',background:s.color}})),
+          )),
+        !isLayman&&React.createElement('div',{className:'sub',style:{marginTop:8}},'Technical and Intelligence update live from APIs'),
+      ),
+      // Price Chart
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{className:'flex-between mb-8'},
+          React.createElement('span',{style:{fontSize:13,fontWeight:500}},'Novo Nordisk (NVO)'),
+          React.createElement('div',{className:'flex gap-4'},
+            ...['1D','1W','1M','1Y','3Y','5Y'].map(r=>
+              React.createElement('button',{key:r,onClick:()=>setChartRange(r),style:{padding:'2px 8px',fontSize:10,border:chartRange===r?'1px solid var(--nvo-blue)':'1px solid var(--border)',borderRadius:4,background:chartRange===r?'#EBF3FF':'transparent',color:chartRange===r?'var(--nvo-blue)':'var(--text-secondary)',cursor:'pointer',fontWeight:500}},r)),
+          ),
+        ),
+        React.createElement(LineChart,{data:chartData,height:130}),
+        React.createElement('div',{className:'sub',style:{marginTop:8,textAlign:'center'}},'Down 75% from Jun 2024 peak of $148.15 — the market has overreacted'),
+      ),
+    ),
+    // Row 4: Three Engine Cards
+    React.createElement('div',{className:'grid-3 mt-12'},
+      ...[
+        {n:1,name:'Diabetes Care',rev:'$35.4B',border:'var(--up)',tag:'Stable anchor',tagCls:'pill-green',desc:'100-year moat \u00b7 32% global share \u00b7 Ozempic growing',detail:'Ozempic $22.7B / Rybelsus $4.7B / Insulin $4.8B / Victoza declining',insight:'26.5% US patient penetration — massive runway remaining'},
+        {n:2,name:'Obesity Care',rev:'$12.8B',border:'var(--amber)',tag:'Free optionality',tagCls:'pill-amber',desc:'Oral Wegovy first-mover \u00b7 compounding recovery unmodeled',detail:'Wegovy $12.0B / Saxenda $0.8B / Oral Wegovy launched Dec 2025',insight:'170K patients in month 1 of oral launch — fastest pharma debut on record',fwd:'FY2027E: $20.5B (+71%)'},
+        {n:3,name:'Rare Disease',rev:'$3.0B',border:'var(--nvo-blue)',tag:'Hidden compounder',tagCls:'pill-blue',desc:'Growing 9-31% by sub-segment \u00b7 $16B segment value ignored',detail:'Rare Blood $1.8B / Rare Endocrine $0.9B / Alhemo approved / Mim8 filed',insight:'At 18x EBITDA this segment alone is worth $16B ($3.61/share) — priced at zero'},
+      ].map(e=>
+        React.createElement('div',{key:e.n,className:'card engine-card',style:{borderLeftColor:e.border},onClick:()=>setExpanded(expandedEngine===e.n?null:e.n)},
+          React.createElement('div',{className:'label'},'Engine '+e.n),
+          React.createElement('div',{style:{fontSize:15,fontWeight:600,marginTop:4}},e.name),
+          React.createElement('div',{className:'value',style:{marginTop:4}},e.rev),
+          React.createElement('div',{className:'flex gap-4',style:{marginTop:4}},React.createElement('span',{className:`pill ${e.tagCls}`},e.tag)),
+          React.createElement('div',{className:'sub',style:{marginTop:6}},e.desc),
+          expandedEngine===e.n&&React.createElement('div',{style:{marginTop:10,paddingTop:10,borderTop:'.5px solid var(--border)',animation:'fadeIn 200ms ease'}},
+            React.createElement('div',{style:{fontSize:12,marginBottom:6}},e.detail),
+            React.createElement('div',{style:{fontSize:12,fontWeight:500,color:'var(--nvo-blue)'}},e.insight),
+            e.fwd&&React.createElement('div',{style:{fontSize:12,fontWeight:500,color:'var(--up)',marginTop:4}},e.fwd),
+          ),
+        )),
+    ),
+    // Row 5: Wall Street + Catalysts
+    React.createElement('div',{className:'grid-2 mt-12'},
+      // Wall Street Reality Check
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{className:'flex-between mb-8'},
+          React.createElement('span',{style:{fontSize:13,fontWeight:600}},'Wall Street Reality Check'),
+          React.createElement('span',{className:'pill pill-amber'},'HOLD'),
+        ),
+        // Price bar
+        React.createElement('div',{style:{position:'relative',height:40,margin:'12px 0'}},
+          React.createElement('div',{style:{position:'absolute',left:0,right:0,top:16,height:8,background:'#E5E7EB',borderRadius:4}}),
+          React.createElement('div',{style:{position:'absolute',left:`${(36.98/80)*100}%`,top:4,width:2,height:32,background:'var(--down)',borderRadius:1}}),
+          React.createElement('div',{style:{position:'absolute',left:`${(36.98/80)*100}%`,top:-8,transform:'translateX(-50%)',fontSize:10,fontWeight:500,color:'var(--down)'}},'$36.98'),
+          React.createElement('div',{style:{position:'absolute',left:`${(54/80)*100}%`,top:4,width:2,height:32,background:'var(--nvo-blue)',borderRadius:1}}),
+          React.createElement('div',{style:{position:'absolute',left:`${(54/80)*100}%`,top:-8,transform:'translateX(-50%)',fontSize:10,fontWeight:500,color:'var(--nvo-blue)'}},'$54 avg'),
+          React.createElement('div',{style:{position:'absolute',left:`${(36.98/80)*100}%`,right:`${100-(54/80)*100}%`,top:13,height:14,background:'rgba(29,158,117,.12)',borderRadius:2,display:'flex',alignItems:'center',justifyContent:'center'}},
+            React.createElement('span',{style:{fontSize:10,fontWeight:600,color:'var(--up)'}},'+46%'),
+          ),
+        ),
+        React.createElement('div',{style:{fontSize:12,color:'var(--text-secondary)',marginTop:8}},'17 of 23 analysts say Hold'),
+        React.createElement('div',{style:{fontSize:12,fontWeight:600,marginTop:6}},isLayman?'Professional analysts think Novo is worth $54. It trades at $37. Even the cautious ones say it\'s cheap — with their own numbers.':'Analysts are too cautious to say Buy — their own numbers say +46% undervalued'),
+        !isLayman&&React.createElement('table',{style:{marginTop:10}},
+          React.createElement('thead',null,React.createElement('tr',null,...['Firm','Rating','Target','Date'].map(h=>React.createElement('th',{key:h},h)))),
+          React.createElement('tbody',null,...ANALYSTS.map((a,i)=>React.createElement('tr',{key:i},
+            React.createElement('td',{style:{fontWeight:500}},a.firm),React.createElement('td',{style:{color:a.color}},a.rating),React.createElement('td',null,a.pt),React.createElement('td',null,a.date)))),
+        ),
+      ),
+      // Catalyst Timeline
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:16}},'Key Dates Ahead'),
+        React.createElement('div',{style:{position:'relative',marginTop:40,marginBottom:40}},
+          React.createElement('div',{className:'timeline-bar'}),
+          ...CATALYSTS.map((c,i)=>{
+            const pos=`${((i+.5)/CATALYSTS.length)*100}%`;
+            return React.createElement('div',{key:i,style:{position:'absolute',left:pos}},
+              React.createElement('div',{style:{position:'absolute',top:'-5px',left:'50%',transform:'translate(-50%,-50%)',width:10,height:10,borderRadius:'50%',background:c.color,border:'2px solid #fff'}}),
+              React.createElement('div',{style:{position:'absolute',top:12,left:'50%',transform:'translateX(-50%)',fontSize:10,fontWeight:500,whiteSpace:'nowrap',color:'var(--text-primary)'}},c.name),
+              React.createElement('div',{style:{position:'absolute',top:26,left:'50%',transform:'translateX(-50%)',fontSize:9,whiteSpace:'nowrap',color:'var(--text-secondary)'}},daysUntil(c.date)),
+              React.createElement('div',{style:{position:'absolute',bottom:12,left:'50%',transform:'translateX(-50%)',fontSize:9,whiteSpace:'nowrap'}},
+                React.createElement('span',{className:'pill',style:{fontSize:9,padding:'1px 6px',background:c.color,color:'#fff',border:'none'}},c.label)),
+            );
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+/* ===== TAB 2: FINANCIAL ===== */
+function TabFinancial({isLayman}){
+  const[iraSlider,setIra]=useState(71);
+  const iraRev=(3.5*(iraSlider/100));
+  return React.createElement('div',{className:'tab-content'},
+    // Section 1: Valuation cards
+    React.createElement('div',{className:'grid-4'},
+      React.createElement(MetricCard,{label:'NVO EV/EBITDA',value:'7.6x',sub:'-45.3% vs 13.9x peer median',color:'var(--up)'}),
+      React.createElement(MetricCard,{label:'Peer Median',value:'13.9x',sub:'8 large-cap pharma peers'}),
+      React.createElement(MetricCard,{label:'Re-Rating Implied',value:'$67.37',sub:'+82% upside at peer median',color:'var(--up)'}),
+      React.createElement(MetricCard,{label:'Pipeline rNPV',value:'$21.49/sh',sub:'Currently priced at zero',color:'var(--nvo-blue)'}),
+    ),
+    // Section 2: NVO vs LLY
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:14,fontWeight:600,marginBottom:10}},'NVO vs LLY — Same Revenue. 5.4x Lower Market Cap.'),
+      React.createElement('table',null,
+        React.createElement('thead',null,React.createElement('tr',null,...['Metric','NVO','LLY'].map(h=>React.createElement('th',{key:h,style:{textAlign:h!=='Metric'?'right':'left'}},h)))),
+        React.createElement('tbody',null,
+          ...([['Revenue FY2025','$46.8B','$45.1B',true],['EBITDA Margin','48.4%','43.4%',true],['Net Margin','33.1%','31.7%',true],['P/E (trailing)','10.4x','40.7x',true],['EV/EBITDA','7.6x','27.2x',true],['Market Cap','$164B','$884B',true]]).map(([m,n,l,nBetter],i)=>
+            React.createElement('tr',{key:i},React.createElement('td',{style:{fontWeight:500}},m),React.createElement('td',{style:{textAlign:'right',color:nBetter?'var(--up)':'inherit',fontWeight:500}},n),React.createElement('td',{style:{textAlign:'right'}},l))),
+        ),
+      ),
+      React.createElement('div',{style:{fontSize:12,fontWeight:600,marginTop:10}},'NVO generates more revenue than LLY, with better margins, at 1/5th the market cap. The valuation gap is the opportunity.'),
+    ),
+    // Section 3: DCF Confidence Band
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Three-Scenario DCF — Current price sits in the bear zone'),
+      React.createElement('div',{style:{position:'relative',height:32,background:'#F3F4F6',borderRadius:4,overflow:'visible',margin:'20px 0'}},
+        React.createElement('div',{style:{position:'absolute',left:`${28/90*100}%`,width:`${4/90*100}%`,height:'100%',background:'var(--down)',borderRadius:'4px 0 0 4px',opacity:.3}}),
+        React.createElement('div',{style:{position:'absolute',left:`${32/90*100}%`,width:`${5/90*100}%`,height:'100%',background:'#D1D5DB'}}),
+        React.createElement('div',{style:{position:'absolute',left:`${55/90*100}%`,width:`${10/90*100}%`,height:'100%',background:'var(--nvo-blue)',opacity:.25}}),
+        React.createElement('div',{style:{position:'absolute',left:`${65/90*100}%`,width:`${8/90*100}%`,height:'100%',background:'var(--up)',borderRadius:'0 4px 4px 0',opacity:.2}}),
+        React.createElement('div',{style:{position:'absolute',left:`${36.98/90*100}%`,top:-6,bottom:-6,width:2,background:'var(--down)',zIndex:2}}),
+        React.createElement('div',{style:{position:'absolute',left:`${36.98/90*100}%`,top:-22,transform:'translateX(-50%)',fontSize:10,fontWeight:600,color:'var(--down)'}},'$36.98 current'),
+        ...([{x:30,label:'$28-32 Bear',color:'var(--down)'},{x:60,label:'$55-65 Base/Bull',color:'var(--nvo-blue)'},{x:69,label:'$65-73 Re-rating',color:'var(--up)'}]).map((z,i)=>
+          React.createElement('div',{key:i,style:{position:'absolute',left:`${z.x/90*100}%`,bottom:-16,fontSize:9,color:z.color,whiteSpace:'nowrap',transform:'translateX(-50%)'}},z.label)),
+      ),
+    ),
+    // Section 4: SOTP Waterfall
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:12}},'Sum-of-Parts Waterfall'),
+      ...([{name:'Diabetes Care @ 15x',val:37.20,color:'var(--up)'},{name:'Obesity Care @ 10x',val:11.52,color:'var(--amber)'},{name:'Rare Disease @ 18x',val:3.61,color:'var(--nvo-blue)'},{name:'Less Net Debt',val:-3.63,color:'var(--down)'},{name:'Pipeline rNPV',val:21.49,color:'var(--nvo-bright)'}]).map((s,i)=>
+        React.createElement('div',{key:i,className:'flex gap-8',style:{marginBottom:6,alignItems:'center'}},
+          React.createElement('div',{style:{width:140,fontSize:11,color:'var(--text-secondary)',textAlign:'right',flexShrink:0}},s.name),
+          React.createElement('div',{style:{flex:1,height:18,background:'#F3F4F6',borderRadius:3,overflow:'hidden',position:'relative'}},
+            React.createElement('div',{style:{width:`${Math.abs(s.val)/80*100}%`,height:'100%',background:s.color,borderRadius:3,opacity:.7}}),
+          ),
+          React.createElement('div',{style:{width:70,fontSize:12,fontWeight:500,textAlign:'right'}},(s.val>=0?'+':'')+`$${s.val.toFixed(2)}`),
+        )),
+      React.createElement('div',{className:'flex gap-8',style:{marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)',alignItems:'center'}},
+        React.createElement('div',{style:{width:140,fontSize:12,fontWeight:600,textAlign:'right'}},'Intrinsic Value'),
+        React.createElement('div',{style:{flex:1}}),
+        React.createElement('div',{style:{fontSize:18,fontWeight:600,color:'var(--nvo-blue)'}},'$70.19/share'),
+      ),
+      React.createElement('div',{className:'sub',style:{textAlign:'right',marginTop:4}},'vs current $36.98 — pipeline rNPV of $21.49 currently priced at zero'),
+    ),
+    // Section 5: Comps Scatter + Table
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:12}},'Trading Comparables — EV/EBITDA vs EBITDA Margin'),
+      React.createElement('svg',{viewBox:'0 0 400 200',style:{width:'100%',height:200}},
+        // Axes
+        React.createElement('line',{x1:40,y1:10,x2:40,y2:180,stroke:'var(--border)',strokeWidth:.5}),
+        React.createElement('line',{x1:40,y1:180,x2:390,y2:180,stroke:'var(--border)',strokeWidth:.5}),
+        // X labels
+        ...([0,10,20,30,35]).map(v=>React.createElement('text',{key:'x'+v,x:40+(v/35)*350,y:195,fontSize:9,fill:'var(--text-muted)',textAnchor:'middle'},v+'x')),
+        // Y labels
+        ...([20,30,40,50]).map(v=>React.createElement('text',{key:'y'+v,x:36,y:180-((v-15)/40)*170+3,fontSize:9,fill:'var(--text-muted)',textAnchor:'end'},v+'%')),
+        // Median line
+        React.createElement('line',{x1:40+(13.9/35)*350,y1:10,x2:40+(13.9/35)*350,y2:180,stroke:'var(--text-muted)',strokeWidth:.5,strokeDasharray:'4,3'}),
+        React.createElement('text',{x:40+(13.9/35)*350,y:7,fontSize:8,fill:'var(--text-muted)',textAnchor:'middle'},'13.9x median'),
+        // Dots
+        ...COMPS.map((c,i)=>{
+          const cx=40+(c.evEbitda/35)*350;
+          const cy=180-((c.ebitdaM-15)/40)*170;
+          return React.createElement('g',{key:i},
+            React.createElement('circle',{cx,cy,r:c.highlight?6:4,fill:c.highlight?'var(--nvo-blue)':'#9CA3AF',opacity:c.highlight?1:.5,className:'scatter-dot'}),
+            React.createElement('text',{x:cx+8,y:cy+3,fontSize:9,fill:c.highlight?'var(--nvo-blue)':'var(--text-secondary)',fontWeight:c.highlight?600:400},c.t+(c.highlight?' — 7.6x':'')),
+          );
+        }),
+      ),
+      // Compact comps table
+      React.createElement('table',{style:{marginTop:12}},
+        React.createElement('thead',null,React.createElement('tr',null,...['Ticker','EV/EBITDA','EV/Rev','P/E','EBITDA Margin','1Y Perf','Div Yield'].map(h=>React.createElement('th',{key:h,style:{textAlign:'right'}},h)))),
+        React.createElement('tbody',null,...COMPS.map((c,i)=>React.createElement('tr',{key:i,className:c.highlight?'highlight':''},
+          React.createElement('td',{style:{fontWeight:600}},c.t),
+          React.createElement('td',{style:{textAlign:'right'}},c.evEbitda+'x'),
+          React.createElement('td',{style:{textAlign:'right'}},c.evRev+'x'),
+          React.createElement('td',{style:{textAlign:'right'}},c.pe+'x'),
+          React.createElement('td',{style:{textAlign:'right'}},c.ebitdaM+'%'),
+          React.createElement('td',{style:{textAlign:'right',color:c.perf1y>=0?'var(--up)':'var(--down)'}},pct(c.perf1y)),
+          React.createElement('td',{style:{textAlign:'right'}},c.divY+'%'),
+        ))),
+      ),
+    ),
+    // Section 6: Capital Efficiency
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Capital Efficiency'),
+      React.createElement('div',{className:'grid-3'},
+        React.createElement('div',null,React.createElement('div',{className:'label'},'ROIC'),React.createElement('div',{className:'value'},'33.0%'),React.createElement('div',{className:'sub'},'67.6% (2023) \u2192 33.0% (2025) — declining but elite')),
+        React.createElement('div',null,React.createElement('div',{className:'label'},'WACC'),React.createElement('div',{className:'value'},'~9.0%'),React.createElement('div',{className:'sub'},'Spread: +24.0pp above cost of capital')),
+        React.createElement('div',null,React.createElement('div',{className:'label'},'Buyback Price'),React.createElement('div',{className:'value',style:{color:'var(--up)'}},'DKK 271'),React.createElement('div',{className:'sub'},'66% cheaper than 2024 avg (DKK 806)')),
+      ),
+    ),
+    // Section 7: IRA Slider
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'IRA Medicare Price Cut Sensitivity'),
+      React.createElement('div',{className:'flex-between',style:{marginBottom:4}},
+        React.createElement('span',{className:'label'},'Medicare price cut'),
+        React.createElement('span',{style:{fontSize:14,fontWeight:500}},iraSlider+'%'),
+      ),
+      React.createElement('input',{type:'range',min:0,max:75,value:iraSlider,onChange:e=>setIra(+e.target.value),style:{width:'100%',marginBottom:8}}),
+      React.createElement('div',{className:'grid-3'},
+        React.createElement('div',null,React.createElement('div',{className:'label'},'Revenue Impact'),React.createElement('div',{className:'value',style:{color:'var(--down)'}},'-$'+iraRev.toFixed(1)+'B')),
+        React.createElement('div',null,React.createElement('div',{className:'label'},'% of Total Revenue'),React.createElement('div',{className:'value',style:{color:'var(--down)'}},'-'+(iraRev/46.8*100).toFixed(1)+'%')),
+        React.createElement('div',null,React.createElement('div',{className:'label'},'Mitigant'),React.createElement('div',{style:{fontSize:12,color:'var(--up)',fontWeight:500}},'Medicare obesity coverage mid-2026 adds 40M+ eligible patients')),
+      ),
+      iraSlider>=70&&React.createElement('div',{style:{fontSize:11,marginTop:8,padding:8,background:'#FEF3C7',borderRadius:6}},'Announced IRA cut: 71% on Ozempic/Wegovy. Trump deal: $245/mo for 156M Medicare + Medicaid patients.'),
+    ),
+    // Section 8: FY2027 Projection
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:12}},'FY2027 Obesity Franchise Projection (+71% vs FY2025)'),
+      ...([{name:'Wegovy injectable base',val:14.0,color:'var(--nvo-blue)',w:14},{name:'Compounding recovery',val:3.0,color:'var(--amber)',w:3,tag:'Unmodeled by consensus'},{name:'Oral Wegovy',val:2.0,color:'var(--nvo-bright)',w:2},{name:'CagriSema (if approved)',val:1.5,color:'var(--up)',w:1.5}]).map((s,i)=>
+        React.createElement('div',{key:i,className:'flex gap-8',style:{marginBottom:6,alignItems:'center'}},
+          React.createElement('div',{style:{width:160,fontSize:11,color:'var(--text-secondary)',textAlign:'right'}},s.name),
+          React.createElement('div',{style:{flex:1,height:18,background:'#F3F4F6',borderRadius:3}},
+            React.createElement('div',{style:{width:`${s.w/22*100}%`,height:'100%',background:s.color,borderRadius:3,opacity:.7}})),
+          React.createElement('div',{style:{width:50,fontSize:12,fontWeight:500}},'+$'+s.val.toFixed(1)+'B'),
+          s.tag&&React.createElement('span',{className:'pill pill-amber',style:{fontSize:9}},s.tag),
+        )),
+      React.createElement('div',{className:'flex-between',style:{marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)'}},
+        React.createElement('span',{style:{fontWeight:600}},'FY2027E Total'),
+        React.createElement('span',{style:{fontSize:18,fontWeight:600,color:'var(--up)'}},'$20.5B'),
+      ),
+    ),
+  );
+}
+
+/* ===== TAB 3: TECHNICAL ===== */
+function TabTechnical({data}){
+  const[range,setRange]=useState('1Y');
+  const[showSma,setShowSma]=useState({sma20:false,sma50:false,sma200:false});
+  const hist=usePriceHistory(range);
+  const smaOverlays=useMemo(()=>{
+    if(!hist)return[];
+    const result=[];
+    const closes=hist.map(d=>d.close);
+    if(showSma.sma20){const sma=closes.map((_,i)=>i<19?null:closes.slice(i-19,i+1).reduce((a,b)=>a+b)/20);result.push({data:sma,color:'var(--nvo-blue)',dashed:true})}
+    if(showSma.sma50){const sma=closes.map((_,i)=>i<49?null:closes.slice(i-49,i+1).reduce((a,b)=>a+b)/50);result.push({data:sma,color:'var(--amber)',dashed:true})}
+    if(showSma.sma200){const sma=closes.map((_,i)=>i<199?null:closes.slice(i-199,i+1).reduce((a,b)=>a+b)/200);result.push({data:sma,color:'var(--down)',dashed:true})}
+    return result;
+  },[hist,showSma]);
+
+  const signals=[
+    {name:'RSI (14-day)',reading:'39.8',interp:'Neutral — recovering from oversold',badge:'Neutral',color:'var(--amber)'},
+    {name:'MACD Histogram',reading:'+0.439 rising',interp:'Bearish momentum decelerating',badge:'Neutral',color:'var(--amber)'},
+    {name:'vs 200-day SMA',reading:'-30.3% below',interp:'Price below all major MAs',badge:'Bear',color:'var(--down)'},
+    {name:'Short Interest',reading:'0.6% float, -22%',interp:'Shorts covering — contrarian signal',badge:'Bull',color:'var(--up)'},
+    {name:'Elliott Wave',reading:'Wave 5 / C complete',interp:'Corrective rally targets $79-93',badge:'Bull',color:'var(--up)'},
+    {name:'Institutional Flow',reading:'-10.28% MRQ',interp:'Final capitulation signal',badge:'Neutral',color:'var(--amber)'},
+  ];
+
+  return React.createElement('div',{className:'tab-content'},
+    // Chart
+    React.createElement('div',{className:'card-static'},
+      React.createElement('div',{className:'flex-between mb-8'},
+        React.createElement('div',{className:'flex gap-8'},
+          ...['1D','1W','1M','1Y','3Y','5Y'].map(r=>
+            React.createElement('button',{key:r,onClick:()=>setRange(r),style:{padding:'3px 10px',fontSize:11,border:range===r?'1px solid var(--nvo-blue)':'1px solid var(--border)',borderRadius:4,background:range===r?'#EBF3FF':'#fff',color:range===r?'var(--nvo-blue)':'var(--text-secondary)',cursor:'pointer',fontWeight:500}},r)),
+        ),
+        React.createElement('div',{className:'flex gap-4'},
+          ...([['20-day','sma20','var(--nvo-blue)'],['50-day','sma50','var(--amber)'],['200-day','sma200','var(--down)']]).map(([label,key,color])=>
+            React.createElement('button',{key,onClick:()=>setShowSma(s=>({...s,[key]:!s[key]})),style:{padding:'3px 10px',fontSize:10,border:`1px solid ${showSma[key]?color:'var(--border)'}`,borderRadius:4,background:showSma[key]?color+'15':'#fff',color:showSma[key]?color:'var(--text-secondary)',cursor:'pointer',fontWeight:500}},label)),
+        ),
+      ),
+      React.createElement(LineChart,{data:hist,height:200,overlays:smaOverlays}),
+    ),
+    React.createElement('div',{className:'grid-2 mt-12'},
+      // Signal Scorecard
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:10}},'Technical Signal Scorecard'),
+        ...signals.map((s,i)=>React.createElement('div',{key:i,className:'flex-between',style:{padding:'6px 0',borderBottom:i<signals.length-1?'.5px solid var(--border)':'none'}},
+          React.createElement('div',null,React.createElement('div',{style:{fontSize:12,fontWeight:500}},s.name),React.createElement('div',{style:{fontSize:11,color:'var(--text-muted)'}},s.interp)),
+          React.createElement('div',{className:'flex gap-4'},React.createElement('span',{style:{fontSize:11,fontWeight:500}},s.reading),React.createElement('span',{className:'pill',style:{fontSize:9,padding:'1px 6px',background:s.color,color:'#fff',border:'none'}},s.badge)),
+        )),
+        React.createElement('div',{style:{marginTop:10,padding:8,background:'#F0F4FF',borderRadius:6,fontSize:11}},'Net Technical Score: 4.0/10 — Bearish technicals at oversold extremes, historically a contrarian entry point'),
+      ),
+      // Key Levels
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:10}},'Key Levels'),
+        React.createElement('div',{style:{fontSize:12,marginBottom:8}},
+          React.createElement('span',{style:{fontWeight:500}},'All-time high: '),React.createElement('span',null,'$148.15 (Jun 25, 2024) — '),React.createElement('span',{style:{color:'var(--down)'}},'75.0% from here')),
+        React.createElement('div',{style:{fontSize:12,fontWeight:600,marginBottom:8}},'Current: $'+(data.price||36.98).toFixed(2)),
+        React.createElement('div',{style:{fontSize:11,fontWeight:600,marginBottom:6,color:'var(--up)'}},'SUPPORT'),
+        ...([['S1: $35.12','52-week low, tested and held'],['S2: $33.00','Pre-Wegovy valuation floor'],['S3: $30.00','Thesis invalidation level']]).map(([l,d],i)=>
+          React.createElement('div',{key:'s'+i,style:{padding:'4px 0 4px 10px',borderLeft:'2px solid var(--up)',marginBottom:4}},
+            React.createElement('div',{style:{fontSize:12,fontWeight:500}},l),React.createElement('div',{style:{fontSize:11,color:'var(--text-muted)'}},d))),
+        React.createElement('div',{style:{fontSize:11,fontWeight:600,marginBottom:6,marginTop:8,color:'var(--down)'}},'RESISTANCE'),
+        ...([['R1: $37.40','20-day SMA'],['R2: $44.19','50-day SMA — key breakout level'],['R3: $53.09','200-day SMA — trend confirmation']]).map(([l,d],i)=>
+          React.createElement('div',{key:'r'+i,style:{padding:'4px 0 4px 10px',borderLeft:'2px solid var(--down)',marginBottom:4}},
+            React.createElement('div',{style:{fontSize:12,fontWeight:500}},l),React.createElement('div',{style:{fontSize:11,color:'var(--text-muted)'}},d))),
+        React.createElement('div',{style:{fontSize:11,marginTop:8,padding:8,background:'#F0F4FF',borderRadius:6}},'Close above $44.19 confirms trend reversal. Close below $30.00 invalidates bull thesis.'),
+      ),
+    ),
+    // Institutional Flow
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Institutional Flow Summary'),
+      React.createElement('div',{className:'grid-4'},
+        React.createElement(MetricCard,{label:'Institutional Holders',value:'1,466',sub:'1,423 long / 5 short / 38 both'}),
+        React.createElement(MetricCard,{label:'MRQ Change',value:'-10.43%',sub:'Net decline in holders',color:'var(--down)'}),
+        React.createElement(MetricCard,{label:'Short Interest Trend',value:'-22%',sub:'From Jan peak — shorts covering',color:'var(--up)'}),
+        React.createElement(MetricCard,{label:'Days to Cover',value:'1.67',sub:'Very low — not a crowded short'}),
+      ),
+    ),
+  );
+}
+
+/* ===== TAB 4: NEWS INTEL ===== */
+function TabNews({isLayman}){
+  const[news,setNews]=useState(NEWS_FALLBACK);
+  useEffect(()=>{
+    const to=new Date().toISOString().split('T')[0];
+    const from=new Date(Date.now()-90*864e5).toISOString().split('T')[0];
+    fetch('https://corsproxy.io/?'+encodeURIComponent(`https://finnhub.io/api/v1/company-news?symbol=NVO&from=${from}&to=${to}&token=demo`))
+      .then(r=>r.json()).then(d=>{if(d&&d.length>2)setNews(d.slice(0,8).map(n=>({title:n.headline,source:n.source,date:new Date(n.datetime*1000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),sentiment:n.sentiment>0?'bullish':n.sentiment<0?'bearish':'neutral',summary:n.summary?.slice(0,120)+'...',tier:2,impact:3})))}).catch(()=>{});
+  },[]);
+  const borderColor=s=>s==='bullish'?'var(--up)':s==='bearish'?'var(--down)':'var(--border)';
+  return React.createElement('div',{className:'tab-content'},
+    React.createElement('div',{className:'card-static',style:{background:'#FFFBEB',borderColor:'var(--amber)'}},
+      React.createElement('div',{className:'flex-between'},
+        React.createElement('div',{className:'flex gap-8'},React.createElement('span',{className:'pill pill-amber',style:{fontSize:12}},'MILDLY NEGATIVE'),React.createElement('span',{style:{fontSize:12}},'with bullish undercurrents forming')),
+        React.createElement('span',{style:{fontSize:11,color:'var(--text-muted)'}},'90-day window \u00b7 20 stories analyzed'),
+      ),
+    ),
+    React.createElement('div',{className:'grid-2 mt-12',style:{gridTemplateColumns:'1.5fr 1fr'}},
+      // News Feed
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Latest Intelligence'),
+        ...news.map((n,i)=>React.createElement('div',{key:i,className:'card',style:{borderLeft:`3px solid ${borderColor(n.sentiment)}`,marginBottom:8,padding:12}},
+          React.createElement('div',{style:{fontSize:13,fontWeight:500}},n.title),
+          React.createElement('div',{className:'flex gap-8',style:{marginTop:4}},
+            React.createElement('span',{style:{fontSize:11,color:'var(--text-muted)'}},n.source),
+            React.createElement('span',{style:{fontSize:11,color:'var(--text-muted)'}},n.date),
+            !isLayman&&React.createElement('span',{className:'pill',style:{fontSize:9,padding:'1px 5px',background:borderColor(n.sentiment),color:'#fff',border:'none'}},n.sentiment),
+            isLayman&&React.createElement('span',{className:'pill',style:{fontSize:9,padding:'1px 5px',background:borderColor(n.sentiment),color:'#fff',border:'none'}},n.sentiment==='bullish'?'Good for stock':n.sentiment==='bearish'?'Concern':'Watch'),
+          ),
+          n.summary&&React.createElement('div',{style:{fontSize:11,color:'var(--text-secondary)',marginTop:4}},n.summary),
+        )),
+      ),
+      // Bear Case Rebuttals
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'What the Bears Say — and Why We Disagree'),
+        ...REBUTTALS.map((r,i)=>React.createElement('div',{key:i,className:'card-static',style:{marginBottom:8}},
+          React.createElement('div',{style:{fontSize:12,fontWeight:600,color:'var(--down)',marginBottom:6,padding:'4px 0',borderBottom:'.5px solid var(--border)'}},r.bear),
+          React.createElement('div',{style:{fontSize:12,color:'var(--up)',lineHeight:1.6}},r.bull),
+        )),
+      ),
+    ),
+  );
+}
+
+/* ===== TAB 5: GOVERNANCE ===== */
+function TabGovernance({isLayman}){
+  const toneData=[{q:'Q2 2024',ceo:'Jorgensen',tone:4.5,label:'Confident'},{q:'Q4 2024',ceo:'Jorgensen',tone:2.5,label:'Defensive'},{q:'Q2 2025',ceo:'Jorgensen',tone:2.0,label:'Cautious'},{q:'Q4 2025',ceo:'Doustdar',tone:4.0,label:'Rebuilding'}];
+  const toneH=160,toneW=600;
+  const tPx=(i)=>60+i*((toneW-120)/3);
+  const tPy=(v)=>toneH-20-((v-1)/4)*(toneH-50);
+  const tonePath=toneData.map((d,i)=>`${i===0?'M':'L'}${tPx(i)},${tPy(d.tone)}`).join(' ');
+  return React.createElement('div',{className:'tab-content'},
+    React.createElement('div',{className:'grid-2'},
+      // Board
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Board Composition'),
+        React.createElement('div',{style:{fontSize:28,fontWeight:500}},'17 ',React.createElement('span',{style:{fontSize:14,color:'var(--text-secondary)'}},'members')),
+        React.createElement('div',{style:{margin:'8px 0'}},
+          ...Array(4).fill(0).map((_,i)=>React.createElement('span',{key:'s'+i,className:'board-dot',style:{background:'var(--nvo-blue)'}})),
+          ...Array(3).fill(0).map((_,i)=>React.createElement('span',{key:'f'+i,className:'board-dot',style:{background:'var(--up)'}})),
+          ...Array(3).fill(0).map((_,i)=>React.createElement('span',{key:'o'+i,className:'board-dot',style:{background:'var(--amber)'}})),
+          ...Array(3).fill(0).map((_,i)=>React.createElement('span',{key:'n'+i,className:'board-dot',style:{background:'var(--down)'}})),
+          ...Array(4).fill(0).map((_,i)=>React.createElement('span',{key:'e'+i,className:'board-dot',style:{background:'#D1D5DB'}})),
+        ),
+        React.createElement('div',{style:{fontSize:11,marginTop:8,color:'var(--text-secondary)'}},'Scientific: 4 \u00b7 Financial: 3 \u00b7 Operational: 3 \u00b7 Foundation: 3 \u00b7 Employee: 4'),
+        React.createElement('div',{style:{fontSize:10,marginTop:4,display:'flex',gap:12,flexWrap:'wrap'}},
+          React.createElement('span',{className:'flex gap-4'},React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:'var(--nvo-blue)',display:'inline-block'}}),React.createElement('span',{style:{color:'var(--text-muted)'}},'Scientific')),
+          React.createElement('span',{className:'flex gap-4'},React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:'var(--up)',display:'inline-block'}}),React.createElement('span',{style:{color:'var(--text-muted)'}},'Financial')),
+          React.createElement('span',{className:'flex gap-4'},React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:'var(--amber)',display:'inline-block'}}),React.createElement('span',{style:{color:'var(--text-muted)'}},'Operational')),
+          React.createElement('span',{className:'flex gap-4'},React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:'var(--down)',display:'inline-block'}}),React.createElement('span',{style:{color:'var(--text-muted)'}},'Foundation')),
+          React.createElement('span',{className:'flex gap-4'},React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:'#D1D5DB',display:'inline-block'}}),React.createElement('span',{style:{color:'var(--text-muted)'}},'Employee')),
+        ),
+        React.createElement('div',{style:{fontSize:12,marginTop:8,fontWeight:500}},'Major overhaul Nov 2025 — 6 new directors'),
+        React.createElement('div',{style:{fontSize:11,marginTop:4,color:'var(--text-secondary)'}},'Key additions: Mikael Dolsten (ex-Pfizer CSO, 36 drug approvals), Jan van de Winkel (Genmab CEO)'),
+      ),
+      // CEO
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'CEO Transition'),
+        React.createElement('table',null,
+          React.createElement('thead',null,React.createElement('tr',null,...['','Lars Jorgensen','Maziar Doustdar'].map(h=>React.createElement('th',{key:h},h)))),
+          React.createElement('tbody',null,
+            ...([['Tenure','2017-Aug 2025','Aug 2025-present'],['Background','34yr NVO lifer','33yr NVO, started as clerk'],['Signal','R&D / Institutional','Commercial execution'],['Style','Defensive (final calls)','Aggressive / Rebuilding']]).map(([m,l,d],i)=>
+              React.createElement('tr',{key:i},React.createElement('td',{style:{fontWeight:500,fontSize:11}},m),React.createElement('td',{style:{fontSize:11}},l),React.createElement('td',{style:{fontSize:11,fontWeight:500,color:'var(--nvo-blue)'}},d))),
+          ),
+        ),
+        React.createElement('div',{style:{marginTop:8,padding:8,background:'#F0F4FF',borderRadius:6,fontSize:11,fontStyle:'italic',color:'var(--nvo-blue)'}},"\"This launch has probably been one of the best launches that pharma has seen\" — Doustdar, Q4 2025"),
+      ),
+    ),
+    // NLP Tone
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Management Tone — 4 Earnings Calls'),
+      React.createElement('svg',{viewBox:`0 0 ${toneW} ${toneH}`,style:{width:'100%',height:160}},
+        React.createElement('path',{d:tonePath,fill:'none',stroke:'var(--nvo-blue)',strokeWidth:2,strokeLinejoin:'round'}),
+        ...toneData.map((d,i)=>React.createElement('g',{key:i},
+          React.createElement('circle',{cx:tPx(i),cy:tPy(d.tone),r:4,fill:i===3?'var(--up)':'var(--nvo-blue)',stroke:'#fff',strokeWidth:2}),
+          React.createElement('text',{x:tPx(i),y:tPy(d.tone)-12,fontSize:9,textAnchor:'middle',fill:i===3?'var(--up)':'var(--text-primary)',fontWeight:500},d.label),
+          React.createElement('text',{x:tPx(i),y:toneH-2,fontSize:9,textAnchor:'middle',fill:'var(--text-muted)'},d.q),
+        )),
+        React.createElement('text',{x:tPx(3)+20,y:tPy(4.0)-4,fontSize:8,fill:'var(--up)'},'\u2191 Doustdar'),
+      ),
+    ),
+    // ESOP + Foundation + AGM
+    React.createElement('div',{className:'grid-3 mt-12'},
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'ESOP Alignment'),
+        React.createElement('div',{className:'label'},'CEO Grant Price'),React.createElement('div',{className:'value'},'~$37'),
+        React.createElement('div',{style:{fontSize:11,marginTop:4,color:'var(--up)'}},'Equity maximally tied to stock recovery'),
+        React.createElement('div',{style:{fontSize:11,marginTop:8}},'SBC / Revenue: 0.46% (minimal dilution)'),
+        React.createElement('div',{style:{fontSize:11}},'STIP outcome: 24.7% of max (below target)'),
+      ),
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Foundation Structure'),
+        React.createElement('div',{className:'label'},'Novo Nordisk Foundation'),
+        React.createElement('div',{style:{fontSize:18,fontWeight:500}},'28.1% capital'),
+        React.createElement('div',{style:{fontSize:18,fontWeight:500,color:'var(--nvo-blue)'}},'77.3% votes'),
+        React.createElement('div',{style:{fontSize:11,marginTop:6}},'A-shares CANNOT be sold — structural floor'),
+        React.createElement('div',{style:{fontSize:11}},'Minimum holding: 25.5% of share capital'),
+        React.createElement('div',{style:{fontSize:11,fontWeight:500,color:'var(--up)'}},'30 consecutive years of dividend increases'),
+      ),
+      React.createElement('div',{className:'card-static'},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Share Count Trajectory'),
+        React.createElement('div',{className:'label'},'Net Trend: Declining'),
+        React.createElement('div',{style:{fontSize:11,marginTop:4}},'4,593M (2021) \u2192 4,448M (2025)'),
+        React.createElement('div',{style:{fontSize:11,fontWeight:500,color:'var(--up)'}},'2030E base case: 4,270M (-4.0%)'),
+        React.createElement('div',{style:{fontSize:11}},'EPS accretion from buybacks: +4.2%'),
+        React.createElement('div',{style:{fontSize:11}},'Convertible instruments: NONE'),
+        React.createElement('div',{style:{fontSize:11}},'NVO has NEVER issued equity for M&A'),
+      ),
+    ),
+  );
+}
+
+/* ===== TAB 6: THESIS ===== */
+function TabThesis({isLayman}){
+  const valMethods=[
+    {method:'Peer median EV/EBITDA (13.9x)',price:'$67.37',char:'Conservative re-rating'},
+    {method:'Peer median P/E (22.6x)',price:'$78.87',char:'Moderate re-rating'},
+    {method:'NVO at 12x EV/EBITDA',price:'$54.56',char:'Consensus floor'},
+    {method:'Compounding recovery + base',price:'$55-60',char:'Base case fundamentals'},
+    {method:'Full re-rating + pipeline rNPV',price:'$73+',char:'Bull case'},
+    {method:'Elliott Wave 38.2% retracement',price:'$79',char:'Technical target'},
+  ];
+  return React.createElement('div',{className:'tab-content'},
+    // Hero
+    React.createElement('div',{style:{background:'var(--nvo-navy)',borderRadius:10,padding:24,color:'#fff',textAlign:'center'}},
+      React.createElement('div',{style:{fontSize:14,letterSpacing:2,opacity:.6,marginBottom:4}},'RECOMMENDATION'),
+      React.createElement('div',{style:{fontSize:32,fontWeight:500}},'LONG \u00b7 NYSE: NVO'),
+      React.createElement('div',{style:{fontSize:16,marginTop:8}},'$55 Base Target \u00b7 $65 Bull Target \u00b7 18-Month Horizon'),
+      React.createElement('div',{style:{fontSize:12,marginTop:8,opacity:.7}},'3 independent valuation methods converge on 50-75%+ upside'),
+    ),
+    // Thesis Text
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},isLayman?'The Simple Case':'Investment Thesis'),
+      React.createElement('div',{style:{fontSize:12,lineHeight:1.8,whiteSpace:'pre-wrap'}},isLayman?THESIS_LAYMAN:THESIS_EXPERT),
+    ),
+    // Risks
+    React.createElement('div',{className:'grid-3 mt-12'},
+      ...([{title:'Competitive Risk',bear:"Eli Lilly's tirzepatide has demonstrated superior weight loss efficacy. Orforglipron (LLY oral, FDA Q2 2026) could erode NVO's first-mover oral advantage.",our:'GLP-1 market expanding 30% annually — both companies can grow simultaneously.'},
+        {title:'Pricing & Policy Risk',bear:'IRA 71% Medicare price cut effective Jan 2027. MFN pricing $245/mo. Volume-for-price trade is unproven at scale.',our:'Medicare obesity coverage adds 40M+ patients mid-2026. Volume expansion is the offsetting mechanism.'},
+        {title:'Patent & LOE Risk',bear:'Semaglutide compound patents expired Canada/India/China/Brazil in 2026. US/EU protection until 2031.',our:'Manufacturing moat requires $2-4B and 3-5 years. Realistic US generic entry 2033-2035.'},
+      ]).map((r,i)=>React.createElement('div',{key:i,className:'card-static',style:{borderLeft:'3px solid var(--amber)'}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:600,color:'var(--amber)',marginBottom:6}},r.title),
+        React.createElement('div',{style:{fontSize:11,color:'var(--text-secondary)',marginBottom:8}},r.bear),
+        React.createElement('div',{style:{fontSize:11,fontWeight:500,color:'var(--up)'}},'Our view: '+r.our),
+      )),
+    ),
+    // Valuation Table
+    React.createElement('div',{className:'card-static mt-12'},
+      React.createElement('div',{style:{fontSize:13,fontWeight:600,marginBottom:8}},'Valuation Summary'),
+      React.createElement('table',null,
+        React.createElement('thead',null,React.createElement('tr',null,...['Method','Implied Price','Characterization'].map(h=>React.createElement('th',{key:h},h)))),
+        React.createElement('tbody',null,...valMethods.map((v,i)=>React.createElement('tr',{key:i},
+          React.createElement('td',null,v.method),React.createElement('td',{style:{fontWeight:500,color:'var(--up)'}},v.price),React.createElement('td',null,v.char)))),
+      ),
+      React.createElement('div',{style:{fontSize:12,marginTop:8,fontWeight:500,color:'var(--down)'}},'Current price: $36.98 — sitting in the bear zone'),
+    ),
+  );
+}
+
+/* ===== ASK PRISM CHATBOT ===== */
+function AskPrism({isLayman}){
+  const[open,setOpen]=useState(false);
+  const[messages,setMessages]=useState([]);
+  const[input,setInput]=useState('');
+  const[loading,setLoading]=useState(false);
+  const bodyRef=useRef(null);
+  const suggests=['Why is $55 the base target?','What is the biggest risk?','Explain the compounding recovery','Why buy NVO over Lilly?'];
+
+  const send=async(msg)=>{
+    if(!msg.trim())return;
+    const newMsgs=[...messages,{role:'user',content:msg}];
+    setMessages(newMsgs);setInput('');setLoading(true);
+    try{
+      const sysPrompt=PRISM_SYSTEM+(isLayman?'\n\nThe user is in Layman Mode — use plain English, no jargon.':'\n\nThe user is in Expert Mode — use precise financial language.');
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sysPrompt,messages:newMsgs.map(m=>({role:m.role,content:m.content}))})});
+      const data=await res.json();
+      const reply=data.content?.[0]?.text||'I encountered an issue. Please try again.\n\n— Prism';
+      setMessages([...newMsgs,{role:'assistant',content:reply}]);
+    }catch(e){setMessages([...newMsgs,{role:'assistant',content:'Connection issue. Please try again shortly.\n\n— Prism'}])}
+    setLoading(false);
+  };
+
+  useEffect(()=>{bodyRef.current?.scrollTo(0,bodyRef.current.scrollHeight)},[messages]);
+
+  if(!open)return React.createElement('div',{className:'chat-fab'},
+    React.createElement('button',{className:'chat-fab-btn',onClick:()=>setOpen(true)},React.createElement(PrismLogo,{size:20})),
+    React.createElement('div',{style:{textAlign:'center',fontSize:11,color:'var(--text-muted)',marginTop:4}},'Ask Prism'),
+  );
+
+  return React.createElement('div',{className:'chat-panel'},
+    React.createElement('div',{className:'chat-header'},
+      React.createElement('div',{className:'flex gap-8'},React.createElement(PrismLogo,{size:16}),React.createElement('span',{style:{fontSize:14,fontWeight:500}},'Prism')),
+      React.createElement('div',{className:'flex gap-8'},React.createElement('span',{style:{fontSize:11,color:'var(--text-muted)'}},'NVO Analyst'),React.createElement('button',{onClick:()=>setOpen(false),style:{background:'none',border:'none',cursor:'pointer',fontSize:16,color:'var(--text-muted)'}},'\u00d7')),
+    ),
+    React.createElement('div',{ref:bodyRef,className:'chat-body'},
+      messages.length===0&&React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}},
+        ...suggests.map((s,i)=>React.createElement('button',{key:i,className:'suggest-pill',onClick:()=>send(s)},s))),
+      ...messages.map((m,i)=>React.createElement('div',{key:i,className:m.role==='user'?'msg-user':'msg-prism',style:{whiteSpace:'pre-wrap'}},m.content)),
+      loading&&React.createElement('div',{className:'msg-prism',style:{color:'var(--text-muted)'}},'Analyzing...'),
+    ),
+    React.createElement('div',{className:'chat-input-area'},
+      React.createElement('input',{className:'chat-input',value:input,onChange:e=>setInput(e.target.value),onKeyDown:e=>e.key==='Enter'&&send(input),placeholder:'Ask about NVO...'}),
+      React.createElement('button',{className:'chat-send',onClick:()=>send(input)},'\u2192'),
+    ),
+  );
+}
+
+/* ===== MAIN APP ===== */
+function App(){
+  const[tab,setTab]=useState(0);
+  const[isLayman,setIsLayman]=useState(false);
+  const data=useLiveData();
+  const dkkUsd=useFx();
+  const tabs=['Overview','Financial','Technical','News Intel','Governance','Thesis'];
+
+  return React.createElement('div',{style:{paddingBottom:26}},
+    React.createElement(Topbar,{price:data.price,changePct:data.changePct,delayed:data.delayed,dkkUsd,isLayman,setIsLayman}),
+    React.createElement(Banner,{price:data.price,dkkUsd,lastUpdate:data.lastUpdate}),
+    React.createElement('div',{className:'tab-bar'},
+      ...tabs.map((t,i)=>React.createElement('button',{key:i,className:`tab-btn ${tab===i?'active':''}`,onClick:()=>setTab(i)},t)),
+    ),
+    tab===0&&React.createElement(TabOverview,{data,dkkUsd,isLayman}),
+    tab===1&&React.createElement(TabFinancial,{isLayman}),
+    tab===2&&React.createElement(TabTechnical,{data}),
+    tab===3&&React.createElement(TabNews,{isLayman}),
+    tab===4&&React.createElement(TabGovernance,{isLayman}),
+    tab===5&&React.createElement(TabThesis,{isLayman}),
+    React.createElement(AskPrism,{isLayman}),
+    React.createElement('div',{className:'status-bar'},
+      React.createElement('div',{className:'flex gap-8'},
+        React.createElement('div',{className:'live-dot'}),
+        React.createElement('span',null,'Price \u00b7 Technical \u00b7 News updating live \u00b7 Fundamentals: FY2025 (Feb 2026) \u00b7 Next earnings: May 7, 2026'),
+      ),
+    ),
+  );
+}
+
+/* ===== DRAW-ON ANIMATION STYLE ===== */
+const styleTag=document.createElement('style');
+styleTag.textContent=`@keyframes drawLine{to{stroke-dashoffset:0}}`;
+document.head.appendChild(styleTag);
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
